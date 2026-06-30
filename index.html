@@ -460,7 +460,7 @@
       try {
         const res = await fetch('/api/vision', { method: 'POST', body: fd });
         const data = await res.json();
-        const reply = data.reply || data.error || 'No response';
+        const reply = data.reply || (data.error ? `${data.error}${data.detail ? ': ' + data.detail : ''}` : 'No response');
         loadingEl.textContent = reply;
         conv.rendered.push({ text: reply, who: 'bot', sources: null });
       } catch (e) {
@@ -485,7 +485,7 @@
         })
       });
       const data = await res.json();
-      const reply = data.reply || data.error || 'No response';
+      const reply = data.reply || (data.error ? `${data.error}${data.detail ? ': ' + data.detail : ''}` : 'No response');
       loadingEl.textContent = reply;
       if (data.sources && data.sources.length) {
         const srcDiv = document.createElement('div');
