@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
-<meta name="theme-color" content="#fafaf8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Vekosiq AI</title>
 <style>
   :root {
@@ -16,34 +15,29 @@
     --text: #2b2f2c;
     --text-soft: #8a948c;
     --radius: 14px;
-    --sidebar-w: 240px;
   }
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { height: 100%; }
+  * { box-sizing: border-box; }
   body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background: var(--bg);
     color: var(--text);
     height: 100vh;
-    height: 100dvh; /* keeps layout correct when mobile browser chrome shows/hides */
     display: flex;
     overflow: hidden;
   }
 
   /* ---------- Sidebar ---------- */
   #sidebar {
-    width: var(--sidebar-w);
+    width: 240px;
     background: var(--panel);
     border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
-    transition: transform 0.25s ease;
   }
   #sidebar-header {
     padding: 18px 16px;
-    padding-top: max(18px, env(safe-area-inset-top));
     display: flex;
     align-items: center;
     gap: 8px;
@@ -52,28 +46,16 @@
   #sidebar-header .dot {
     width: 10px; height: 10px; border-radius: 50%;
     background: var(--green);
-    flex-shrink: 0;
   }
   #sidebar-header h1 {
     font-size: 15px;
     margin: 0;
     font-weight: 600;
     letter-spacing: 0.2px;
-    flex: 1;
-  }
-  #closeSidebarBtn {
-    display: none;
-    border: none;
-    background: transparent;
-    color: var(--text-soft);
-    font-size: 20px;
-    line-height: 1;
-    cursor: pointer;
-    padding: 6px;
   }
   #newChatBtn {
     margin: 14px;
-    padding: 12px;
+    padding: 10px 12px;
     border: 1px solid var(--green);
     background: var(--green-soft);
     color: var(--green-dark);
@@ -87,14 +69,13 @@
   #historyList {
     flex: 1;
     overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
     padding: 0 10px;
     display: flex;
     flex-direction: column;
     gap: 4px;
   }
   .hist-item {
-    padding: 12px;
+    padding: 10px 12px;
     border-radius: 10px;
     font-size: 13px;
     color: var(--text-soft);
@@ -102,39 +83,14 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 6px;
   }
-  .hist-item span.label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .hist-item:hover, .hist-item:active { background: var(--green-soft); color: var(--text); }
+  .hist-item:hover { background: var(--green-soft); color: var(--text); }
   .hist-item.active { background: var(--green-soft); color: var(--green-dark); font-weight: 600; }
-  .hist-del {
-    flex-shrink: 0;
-    font-size: 13px;
-    color: var(--text-soft);
-    opacity: 0;
-    padding: 2px 6px;
-    border-radius: 6px;
-  }
-  .hist-item:hover .hist-del { opacity: 1; }
-  .hist-del:hover { color: #c0594f; background: rgba(192,89,79,0.1); }
   #sidebar-footer {
     padding: 12px 16px;
-    padding-bottom: max(12px, env(safe-area-inset-bottom));
     font-size: 11px;
     color: var(--text-soft);
     border-top: 1px solid var(--border);
-  }
-
-  /* ---------- Sidebar overlay (mobile) ---------- */
-  #sidebarOverlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.35);
-    z-index: 20;
   }
 
   /* ---------- Main ---------- */
@@ -143,34 +99,16 @@
     display: flex;
     flex-direction: column;
     min-width: 0;
-    height: 100%;
   }
   header {
-    padding: 14px 16px;
-    padding-top: max(14px, env(safe-area-inset-top));
+    padding: 16px 24px;
     background: var(--panel);
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
-    flex-shrink: 0;
   }
-  header .left { display: flex; align-items: center; gap: 10px; min-width: 0; }
-  #menuBtn {
-    display: none;
-    border: none;
-    background: var(--green-soft);
-    color: var(--green-dark);
-    width: 36px; height: 36px;
-    border-radius: 10px;
-    font-size: 16px;
-    cursor: pointer;
-    flex-shrink: 0;
-    align-items: center;
-    justify-content: center;
-  }
-  header .title { font-size: 14px; font-weight: 600; color: var(--text-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  header .title { font-size: 14px; font-weight: 600; color: var(--text-soft); }
   .toggle {
     display: flex;
     align-items: center;
@@ -179,16 +117,13 @@
     color: var(--text-soft);
     cursor: pointer;
     user-select: none;
-    flex-shrink: 0;
   }
-  .toggle span.label { display: inline; }
   .switch {
     width: 36px; height: 20px;
     background: var(--border);
     border-radius: 20px;
     position: relative;
     transition: background 0.2s;
-    flex-shrink: 0;
   }
   .switch.on { background: var(--green); }
   .switch::after {
@@ -206,27 +141,24 @@
   #chat {
     flex: 1;
     overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    padding: 24px 16px;
+    padding: 28px 24px;
     display: flex;
     flex-direction: column;
     gap: 16px;
     max-width: 760px;
     margin: 0 auto;
     width: 100%;
-    overscroll-behavior: contain;
   }
   .row { display: flex; }
   .row.user { justify-content: flex-end; }
   .row.bot { justify-content: flex-start; }
   .msg {
-    max-width: 86%;
+    max-width: 78%;
     padding: 12px 16px;
     border-radius: var(--radius);
     line-height: 1.5;
     white-space: pre-wrap;
-    word-break: break-word;
-    font-size: 15px;
+    font-size: 14.5px;
   }
   .row.user .msg {
     background: var(--green);
@@ -251,7 +183,7 @@
     color: var(--green-dark);
     text-decoration: none;
     background: var(--green-soft);
-    padding: 4px 9px;
+    padding: 3px 8px;
     border-radius: 8px;
   }
   .sources a:hover { text-decoration: underline; }
@@ -260,7 +192,6 @@
     margin: auto;
     text-align: center;
     color: var(--text-soft);
-    padding: 0 16px;
   }
   #welcome .logo {
     width: 48px; height: 48px;
@@ -276,10 +207,8 @@
   #welcome p { font-size: 13.5px; margin: 0; }
 
   footer {
-    padding: 12px 16px;
-    padding-bottom: max(16px, env(safe-area-inset-bottom));
+    padding: 18px 24px 24px;
     background: var(--bg);
-    flex-shrink: 0;
   }
   #inputBar {
     max-width: 760px;
@@ -287,10 +216,10 @@
     background: var(--panel);
     border: 1px solid var(--border);
     border-radius: 18px;
-    padding: 6px 6px 6px 14px;
+    padding: 8px 8px 8px 16px;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     box-shadow: 0 2px 10px rgba(80, 110, 90, 0.06);
   }
   #inputBar:focus-within { border-color: var(--green); }
@@ -299,10 +228,9 @@
     border: none;
     outline: none;
     background: transparent;
-    font-size: 16px; /* >=16px prevents iOS Safari auto-zoom on focus */
+    font-size: 14.5px;
     color: var(--text);
-    padding: 10px 0;
-    min-width: 0;
+    padding: 8px 0;
   }
   input[type=text]::placeholder { color: var(--text-soft); }
   #charCount {
@@ -311,24 +239,22 @@
     flex-shrink: 0;
     padding-right: 2px;
     user-select: none;
-    display: none; /* shown on wider screens only, see media query */
   }
   #charCount.limit { color: #c0594f; font-weight: 600; }
   button#sendBtn {
-    width: 40px; height: 40px;
+    width: 38px; height: 38px;
     border: none;
     border-radius: 12px;
     background: var(--green);
     color: white;
-    font-size: 17px;
+    font-size: 16px;
     cursor: pointer;
     flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
   }
   button#sendBtn:hover { background: var(--green-dark); }
-  button#sendBtn:disabled { opacity: 0.5; }
   label.upload {
-    width: 40px; height: 40px;
+    width: 38px; height: 38px;
     border-radius: 12px;
     background: var(--green-soft);
     color: var(--green-dark);
@@ -351,39 +277,104 @@
     color: var(--text-soft);
     cursor: pointer;
     background: var(--green-soft);
-    padding: 6px 10px;
+    padding: 4px 10px;
     border-radius: 8px;
   }
 
   ::-webkit-scrollbar { width: 8px; }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; }
 
-  /* ---------- Phone / narrow-viewport optimization ---------- */
-  @media (min-width: 769px) {
-    #charCount { display: block; }
+  /* ---------- Mobile menu button (hidden on desktop) ---------- */
+  #menuBtn {
+    display: none;
+    width: 36px; height: 36px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 16px;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
   }
+  #sidebarOverlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: 20;
+  }
+
+  /* ---------- Mobile breakpoint ---------- */
   @media (max-width: 768px) {
+    body { height: 100dvh; }
+
+    #menuBtn { display: flex; }
+
     #sidebar {
       position: fixed;
-      top: 0; left: 0; bottom: 0;
+      top: 0; bottom: 0; left: 0;
+      width: 78%;
+      max-width: 300px;
       z-index: 30;
       transform: translateX(-100%);
+      transition: transform 0.25s ease;
       box-shadow: 2px 0 16px rgba(0,0,0,0.12);
     }
     #sidebar.open { transform: translateX(0); }
+
     #sidebarOverlay.open { display: block; }
-    #closeSidebarBtn { display: inline-flex; align-items: center; justify-content: center; }
-    #menuBtn { display: flex; }
-    .toggle span.label { display: none; } /* keep header compact on phones */
-    #chat { padding: 18px 12px; gap: 14px; }
-    .msg { max-width: 90%; font-size: 14.5px; }
-    footer { padding: 10px 10px; padding-bottom: max(14px, env(safe-area-inset-bottom)); }
+
+    header {
+      padding: 12px 14px;
+      gap: 10px;
+    }
+    header .title {
+      font-size: 13px;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .toggle span { display: none; }
+    .toggle { gap: 0; }
+
+    #chat {
+      padding: 16px 12px 12px;
+      gap: 12px;
+    }
+    .msg {
+      max-width: 88%;
+      font-size: 15px;
+      padding: 10px 13px;
+    }
     #welcome .logo { width: 42px; height: 42px; font-size: 19px; }
-    #welcome h2 { font-size: 16.5px; }
+    #welcome h2 { font-size: 16px; }
+    #welcome p { font-size: 13px; padding: 0 20px; }
+
+    footer {
+      padding: 10px 10px calc(14px + env(safe-area-inset-bottom));
+    }
+    #inputBar {
+      padding: 6px 6px 6px 12px;
+      border-radius: 16px;
+    }
+    /* font-size 16px on inputs prevents iOS auto-zoom on focus */
+    input[type=text] {
+      font-size: 16px;
+      padding: 9px 0;
+    }
+    #charCount { display: none; }
+    button#sendBtn, label.upload {
+      width: 36px; height: 36px;
+    }
+    #imgPreviewWrap { padding: 0 2px; }
   }
-  @media (max-width: 380px) {
-    header { padding: 12px; }
-    .toggle span:not(.switch) { display: none; }
+
+  @media (max-width: 420px) {
+    .msg { max-width: 92%; font-size: 14.5px; }
+    header { padding: 10px 12px; }
   }
 </style>
 </head>
@@ -395,7 +386,6 @@
   <div id="sidebar-header">
     <div class="dot"></div>
     <h1>Vekosiq AI</h1>
-    <button id="closeSidebarBtn" aria-label="Close menu">✕</button>
   </div>
   <button id="newChatBtn">+ New chat</button>
   <div id="historyList"></div>
@@ -404,12 +394,10 @@
 
 <div id="main">
   <header>
-    <div class="left">
-      <button id="menuBtn" aria-label="Open menu">☰</button>
-      <div class="title" id="chatTitle">New chat</div>
-    </div>
+    <div id="menuBtn">☰</div>
+    <div class="title" id="chatTitle">New chat</div>
     <div class="toggle" id="searchToggleWrap">
-      <span class="label">Web search</span>
+      <span>Web search</span>
       <div class="switch" id="searchSwitch"></div>
     </div>
   </header>
@@ -432,7 +420,7 @@
         📎
         <input type="file" id="imageInput" accept="image/*" style="display:none" />
       </label>
-      <input type="text" id="textInput" placeholder="Message Vekosiq AI..." maxlength="1096" autocomplete="off" />
+      <input type="text" id="textInput" placeholder="Message Vekosiq AI..." maxlength="1096" />
       <span id="charCount">0 / 1096</span>
       <button id="sendBtn">↑</button>
     </div>
@@ -453,107 +441,62 @@
   const newChatBtn = document.getElementById('newChatBtn');
   const historyListEl = document.getElementById('historyList');
   const chatTitle = document.getElementById('chatTitle');
-  const sidebar = document.getElementById('sidebar');
-  const sidebarOverlay = document.getElementById('sidebarOverlay');
   const menuBtn = document.getElementById('menuBtn');
-  const closeSidebarBtn = document.getElementById('closeSidebarBtn');
+  const sidebarEl = document.getElementById('sidebar');
+  const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+  function openSidebar() {
+    sidebarEl.classList.add('open');
+    sidebarOverlay.classList.add('open');
+  }
+  function closeSidebar() {
+    sidebarEl.classList.remove('open');
+    sidebarOverlay.classList.remove('open');
+  }
+  menuBtn.addEventListener('click', () => {
+    sidebarEl.classList.contains('open') ? closeSidebar() : openSidebar();
+  });
+  sidebarOverlay.addEventListener('click', closeSidebar);
 
   const MAX_LEN = 1096; // keep in sync with server's MAX_MESSAGE_LENGTH
 
   let pendingImage = null;
   let searchOn = false;
   let isBusy = false; // true while a request is in flight, blocks sending more
+
+  // ---------- Conversation store (in-memory, resets on page reload) ----------
+  // conversations: { id: { title, messages: [{role, content}], rendered: [{text, who, sources}] } }
+  let conversations = {};
   let activeId = null;
-  let historyCache = [];
 
-  // ---------- Mobile sidebar drawer ----------
-  function openSidebar() {
-    sidebar.classList.add('open');
-    sidebarOverlay.classList.add('open');
-  }
-  function closeSidebar() {
-    sidebar.classList.remove('open');
-    sidebarOverlay.classList.remove('open');
-  }
-  menuBtn.addEventListener('click', openSidebar);
-  closeSidebarBtn.addEventListener('click', closeSidebar);
-  sidebarOverlay.addEventListener('click', closeSidebar);
+  function newId() { return 'c_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7); }
 
-  // ---------- API helpers ----------
-  async function apiGet(url) {
-    const res = await fetch(url);
-    return res.json();
-  }
-  async function apiPost(url, body) {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body || {})
-    });
-    return res.json();
-  }
-  async function apiDelete(url) {
-    const res = await fetch(url, { method: 'DELETE' });
-    return res.json();
-  }
-
-  // ---------- Conversation list (persisted server-side in SQLite) ----------
-  async function loadHistoryList() {
-    const data = await apiGet('/api/conversations');
-    historyCache = data.conversations || [];
+  function createConversation() {
+    const id = newId();
+    conversations[id] = { title: 'New chat', messages: [], rendered: [] };
+    activeId = id;
     renderHistoryList();
+    renderActiveChat();
   }
 
   function renderHistoryList() {
     historyListEl.innerHTML = '';
-    historyCache.forEach(conv => {
-      const div = document.createElement('div');
-      div.className = 'hist-item' + (conv.id === activeId ? ' active' : '');
-
-      const label = document.createElement('span');
-      label.className = 'label';
-      label.textContent = conv.title;
-      div.appendChild(label);
-
-      const del = document.createElement('span');
-      del.className = 'hist-del';
-      del.textContent = '✕';
-      del.title = 'Delete chat';
-      del.onclick = async (e) => {
-        e.stopPropagation();
-        await apiDelete(`/api/conversations/${conv.id}`);
-        if (conv.id === activeId) {
-          await createConversation();
-        } else {
-          await loadHistoryList();
-        }
-      };
-      div.appendChild(del);
-
-      div.onclick = () => { selectConversation(conv.id); closeSidebar(); };
-      historyListEl.appendChild(div);
-    });
+    Object.entries(conversations)
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .forEach(([id, conv]) => {
+        const div = document.createElement('div');
+        div.className = 'hist-item' + (id === activeId ? ' active' : '');
+        div.textContent = conv.title;
+        div.onclick = () => { activeId = id; renderHistoryList(); renderActiveChat(); closeSidebar(); };
+        historyListEl.appendChild(div);
+      });
   }
 
-  async function createConversation() {
-    const data = await apiPost('/api/conversations');
-    activeId = data.id;
-    await loadHistoryList();
-    renderMessages([]);
-    chatTitle.textContent = 'New chat';
-  }
-
-  async function selectConversation(id) {
-    activeId = id;
-    const data = await apiGet(`/api/conversations/${id}`);
-    chatTitle.textContent = data.title || 'New chat';
-    renderMessages(data.messages || []);
-    renderHistoryList();
-  }
-
-  function renderMessages(messages) {
+  function renderActiveChat() {
+    const conv = conversations[activeId];
+    chatTitle.textContent = conv.title;
     chatEl.innerHTML = '';
-    if (!messages.length) {
+    if (conv.rendered.length === 0) {
       chatEl.innerHTML = `
         <div id="welcome">
           <div class="logo">V</div>
@@ -562,13 +505,11 @@
         </div>`;
       return;
     }
-    messages.forEach(m => {
-      appendMessageEl(m.content, m.role === 'user' ? 'user' : 'bot', m.sources);
-    });
+    conv.rendered.forEach(item => appendMessageEl(item.text, item.who, item.sources, false));
     chatEl.scrollTop = chatEl.scrollHeight;
   }
 
-  function appendMessageEl(text, who, sources) {
+  function appendMessageEl(text, who, sources, save = true) {
     const welcome = document.getElementById('welcome');
     if (welcome) welcome.remove();
 
@@ -584,7 +525,7 @@
       srcDiv.className = 'sources';
       sources.forEach(s => {
         const a = document.createElement('a');
-        a.href = s.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = (s.title || 'source').slice(0, 28);
+        a.href = s.url; a.target = '_blank'; a.textContent = s.title?.slice(0, 28) || 'source';
         srcDiv.appendChild(a);
       });
       msg.appendChild(srcDiv);
@@ -592,6 +533,10 @@
 
     chatEl.appendChild(row);
     chatEl.scrollTop = chatEl.scrollHeight;
+
+    if (save) {
+      conversations[activeId].rendered.push({ text, who, sources });
+    }
     return msg;
   }
 
@@ -629,25 +574,32 @@
     const text = textInput.value.trim();
     if (!text && !pendingImage) return;
     if (text.length > MAX_LEN) {
-      appendMessageEl(`Message is too long (${text.length}/${MAX_LEN} characters). Please shorten it.`, 'bot', null);
+      appendMessageEl(`Message is too long (${text.length}/${MAX_LEN} characters). Please shorten it.`, 'bot', null, false);
       return;
     }
-    if (!activeId) await createConversation();
+    if (!activeId) createConversation();
+    const conv = conversations[activeId];
 
     isBusy = true;
     sendBtn.disabled = true;
+    sendBtn.style.opacity = '0.5';
 
     try {
 
+    if (conv.title === 'New chat' && text) {
+      conv.title = text.slice(0, 32);
+      chatTitle.textContent = conv.title;
+      renderHistoryList();
+    }
+
     if (pendingImage) {
-      appendMessageEl(text || '(image uploaded)', 'user', null);
+      appendMessageEl(text || '(image uploaded)', 'user');
       const fd = new FormData();
       fd.append('image', pendingImage);
       fd.append('prompt', text || 'Describe this image in detail.');
-      fd.append('conversationId', activeId);
       textInput.value = '';
       updateCharCount();
-      const loadingEl = appendMessageEl('Analyzing image…', 'bot', null);
+      const loadingEl = appendMessageEl('Analyzing image…', 'bot', null, false);
       pendingImage = null;
       imageInput.value = '';
       imgPreviewWrap.style.display = 'none';
@@ -656,27 +608,30 @@
         const data = await res.json();
         const reply = data.reply || (data.error ? `${data.error}${data.detail ? ': ' + data.detail : ''}` : 'No response');
         loadingEl.textContent = reply;
-        if (data.title) {
-          chatTitle.textContent = data.title;
-          await loadHistoryList();
-        }
+        conv.rendered.push({ text: reply, who: 'bot', sources: null });
       } catch (e) {
         loadingEl.textContent = 'Error: ' + e.message;
       }
       return;
     }
 
-    appendMessageEl(text, 'user', null);
+    appendMessageEl(text, 'user');
+    conv.messages.push({ role: 'user', content: text });
     textInput.value = '';
     updateCharCount();
-    const loadingEl = appendMessageEl('Thinking…', 'bot', null);
+    const loadingEl = appendMessageEl('Thinking…', 'bot', null, false);
 
     try {
-      const data = await apiPost('/api/chat', {
-        message: text,
-        conversationId: activeId,
-        useSearch: searchOn
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: text,
+          history: conv.messages.slice(0, -1), // history before this turn
+          useSearch: searchOn
+        })
       });
+      const data = await res.json();
       const reply = data.reply || (data.error ? `${data.error}${data.detail ? ': ' + data.detail : ''}` : 'No response');
       loadingEl.textContent = reply;
       if (data.sources && data.sources.length) {
@@ -684,15 +639,13 @@
         srcDiv.className = 'sources';
         data.sources.forEach(s => {
           const a = document.createElement('a');
-          a.href = s.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = (s.title || 'source').slice(0, 28);
+          a.href = s.url; a.target = '_blank'; a.textContent = (s.title || 'source').slice(0, 28);
           srcDiv.appendChild(a);
         });
         loadingEl.appendChild(srcDiv);
       }
-      if (data.title) {
-        chatTitle.textContent = data.title;
-        await loadHistoryList();
-      }
+      conv.messages.push({ role: 'assistant', content: reply });
+      conv.rendered.push({ text: reply, who: 'bot', sources: data.sources || null });
     } catch (e) {
       loadingEl.textContent = 'Error: ' + e.message;
     }
@@ -700,6 +653,7 @@
     } finally {
       isBusy = false;
       sendBtn.disabled = false;
+      sendBtn.style.opacity = '1';
     }
   }
 
@@ -708,14 +662,7 @@
     if (e.key === 'Enter') send();
   });
 
-  (async function init() {
-    await loadHistoryList();
-    if (historyCache.length) {
-      await selectConversation(historyCache[0].id);
-    } else {
-      await createConversation();
-    }
-  })();
+  createConversation();
 </script>
 
 </body>
