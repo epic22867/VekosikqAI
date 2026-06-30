@@ -3,6 +3,7 @@ const express = require('express');
 const axios = require('axios');
 const multer = require('multer');
 const path = require('path');
+const Database = require('better-sqlite3');
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
@@ -26,6 +27,65 @@ const MAX_QUEUE_SIZE = parseInt(process.env.MAX_QUEUE_SIZE || '20', 10);
 // same GPU/CPU), so we default to 1 — i.e. requests are queued and processed
 // one-by-one, in order ("orders"), instead of overloading the server.
 const OLLAMA_CONCURRENCY = parseInt(process.env.OLLAMA_CONCURRENCY || '1', 10);
+
+// ---------- SQLite persistence ----------
+// Chats survive server restarts and page reloads. A single file DB is fine here
+// since the whole app is already serialized through the request queue above.
+const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'data', 'vekosiq.db');
+require('fs').mkdirSync(path.dirname(DB_PATH), { recursive: true });
+const db = new Database(DB_PATH);
+db.pragma('journal_mode = WAL');
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS conversations (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL DEFAULT 'New chat',
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    role TEXT NOT NULL,
+    content TEXT NOT NULL,
+    sources TEXT,
+    created_at INTEGER NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_messages_conv ON messages(conversation_id);
+`);
+
+const stmts = {
+  insertConv: db.prepare('INSERT INTO conversations (id, title, created_at, updated_at) VALUES (?, ?, ?, ?)'),
+  touchConv: db.prepare('UPDATE conversations SET updated_at = ? WHERE id = ?'),
+  renameConv: db.prepare('UPDATE conversations SET title = ?, updated_at = ? WHERE id = ?'),
+  getConv: db.prepare('SELECT * FROM conversations WHERE id = ?'),
+  listConvs: db.prepare('SELECT id, title, created_at, updated_at FROM conversations ORDER BY updated_at DESC'),
+  deleteConv: db.prepare('DELETE FROM conversations WHERE id = ?'),
+  insertMsg: db.prepare('INSERT INTO messages (conversation_id, role, content, sources, created_at) VALUES (?, ?, ?, ?, ?)'),
+  listMsgs: db.prepare('SELECT role, content, sources, created_at FROM messages WHERE conversation_id = ? ORDER BY id ASC'),
+};
+
+function ensureConversation(id) {
+  let conv = stmts.getConv.get(id);
+  if (!conv) {
+    const now = Date.now();
+    stmts.insertConv.run(id, 'New chat', now, now);
+    conv = stmts.getConv.get(id);
+  }
+  return conv;
+}
+
+function saveMessage(conversationId, role, content, sources) {
+  stmts.insertMsg.run(conversationId, role, content, sources ? JSON.stringify(sources) : null, Date.now());
+  stmts.touchConv.run(Date.now(), conversationId);
+}
+
+function maybeAutoTitle(conversationId, firstUserText) {
+  const conv = stmts.getConv.get(conversationId);
+  if (conv && conv.title === 'New chat' && firstUserText) {
+    stmts.renameConv.run(firstUserText.slice(0, 32), Date.now(), conversationId);
+  }
+}
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname))); // serves index.html
@@ -96,17 +156,59 @@ async function tavilySearch(query) {
   return res.data.results || [];
 }
 
+// ============================================================
+// ---------- Conversation CRUD (persisted in SQLite) ----------
+// ============================================================
+
+// List all conversations (sidebar history), most recently updated first.
+app.get('/api/conversations', (req, res) => {
+  const rows = stmts.listConvs.all();
+  res.json({ conversations: rows });
+});
+
+// Create a new (empty) conversation and return its id.
+app.post('/api/conversations', (req, res) => {
+  const id = 'c_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
+  const now = Date.now();
+  stmts.insertConv.run(id, 'New chat', now, now);
+  res.json({ id, title: 'New chat', created_at: now, updated_at: now });
+});
+
+// Fetch a single conversation with its full message history.
+app.get('/api/conversations/:id', (req, res) => {
+  const conv = stmts.getConv.get(req.params.id);
+  if (!conv) return res.status(404).json({ error: 'Conversation not found' });
+  const rows = stmts.listMsgs.all(req.params.id);
+  const messages = rows.map(r => ({
+    role: r.role,
+    content: r.content,
+    sources: r.sources ? JSON.parse(r.sources) : null,
+    created_at: r.created_at
+  }));
+  res.json({ id: conv.id, title: conv.title, messages });
+});
+
+// Delete a conversation and all of its messages.
+app.delete('/api/conversations/:id', (req, res) => {
+  stmts.deleteConv.run(req.params.id);
+  res.json({ ok: true });
+});
+
 // ---------- Text chat (Qwen3:8b via Ollama) — supports multi-turn history ----------
 app.post('/api/chat', async (req, res) => {
   try {
-    const { message, history, useSearch } = req.body;
+    const { message, conversationId, useSearch } = req.body;
     if (!message) return res.status(400).json({ error: 'message required' });
+    if (!conversationId) return res.status(400).json({ error: 'conversationId required' });
 
     const lengthError = checkLength(message, 'Message');
     if (lengthError) return res.status(400).json({ error: lengthError });
 
-    // history: array of { role: 'user'|'assistant', content: string } from previous turns
-    const messages = Array.isArray(history) ? [...history] : [];
+    ensureConversation(conversationId);
+
+    // Pull prior turns from the DB instead of trusting the client to send them.
+    const priorRows = stmts.listMsgs.all(conversationId);
+    const messages = priorRows.map(r => ({ role: r.role, content: r.content }));
 
     let userContent = message;
     let usedSources = [];
@@ -133,7 +235,15 @@ app.post('/api/chat', async (req, res) => {
     }));
 
     const reply = ollamaRes.data.message?.content || '';
-    res.json({ reply, sources: usedSources });
+
+    // Persist the turn (store the raw user message, not the search-augmented one,
+    // so re-loading the chat looks the same as what the user actually typed).
+    maybeAutoTitle(conversationId, message);
+    saveMessage(conversationId, 'user', message, null);
+    saveMessage(conversationId, 'assistant', reply, usedSources.length ? usedSources : null);
+
+    const conv = stmts.getConv.get(conversationId);
+    res.json({ reply, sources: usedSources, title: conv.title });
   } catch (err) {
     const detail = extractErrorDetail(err);
     console.error('Chat error:', detail);
@@ -150,9 +260,13 @@ app.post('/api/vision', upload.single('image'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'image required' });
     const userPrompt = req.body.prompt || 'Describe this image in detail.';
+    const conversationId = req.body.conversationId;
+    if (!conversationId) return res.status(400).json({ error: 'conversationId required' });
 
     const lengthError = checkLength(userPrompt, 'Prompt');
     if (lengthError) return res.status(400).json({ error: lengthError });
+
+    ensureConversation(conversationId);
 
     const base64Image = req.file.buffer.toString('base64');
 
@@ -180,7 +294,13 @@ app.post('/api/vision', upload.single('image'), async (req, res) => {
     }));
 
     const reply = ollamaRes.data.message?.content || '';
-    res.json({ reply, imageDescription });
+
+    maybeAutoTitle(conversationId, userPrompt);
+    saveMessage(conversationId, 'user', userPrompt, null);
+    saveMessage(conversationId, 'assistant', reply, null);
+
+    const conv = stmts.getConv.get(conversationId);
+    res.json({ reply, imageDescription, title: conv.title });
   } catch (err) {
     const detail = extractErrorDetail(err);
     console.error('Vision error:', detail);
@@ -213,4 +333,5 @@ app.get('/health', (req, res) => res.json({
 app.listen(PORT, () => {
   console.log(`Vekosiq AI running on port ${PORT}`);
   console.log(`Ollama base URL: ${OLLAMA_BASE_URL}`);
+  console.log(`SQLite DB: ${DB_PATH}`);
 });
