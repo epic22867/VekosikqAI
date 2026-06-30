@@ -16,6 +16,19 @@ const TAVILY_API_KEY = process.env.TAVILY_API_KEY || '';
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname))); // serves index.html
 
+// Pulls the real error message out of an axios error, including the
+// upstream Ollama/Tavily response body if present, instead of just
+// the generic "Request failed with status code 500".
+function extractErrorDetail(err) {
+  if (err.response && err.response.data) {
+    const data = err.response.data;
+    if (typeof data === 'string') return data;
+    if (data.error) return typeof data.error === 'string' ? data.error : JSON.stringify(data.error);
+    return JSON.stringify(data);
+  }
+  return err.message;
+}
+
 // ---------- Tavily web search ----------
 async function tavilySearch(query) {
   if (!TAVILY_API_KEY) throw new Error('TAVILY_API_KEY not set');
@@ -64,8 +77,9 @@ app.post('/api/chat', async (req, res) => {
     const reply = ollamaRes.data.message?.content || '';
     res.json({ reply, sources: usedSources });
   } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ error: 'Text generation failed', detail: err.message });
+    const detail = extractErrorDetail(err);
+    console.error('Chat error:', detail);
+    res.status(500).json({ error: 'Text generation failed', detail });
   }
 });
 
@@ -85,8 +99,9 @@ app.post('/api/vision', upload.single('image'), async (req, res) => {
 
     res.json({ reply: ollamaRes.data.response });
   } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ error: 'Vision analysis failed', detail: err.message });
+    const detail = extractErrorDetail(err);
+    console.error('Vision error:', detail);
+    res.status(500).json({ error: 'Vision analysis failed', detail });
   }
 });
 
