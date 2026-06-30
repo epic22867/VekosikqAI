@@ -28,35 +28,41 @@ async function tavilySearch(query) {
   return res.data.results || [];
 }
 
-// ---------- Text chat (Qwen3:8b via Ollama) ----------
+// ---------- Text chat (Qwen3:8b via Ollama) — supports multi-turn history ----------
 app.post('/api/chat', async (req, res) => {
   try {
-    const { message, useSearch } = req.body;
+    const { message, history, useSearch } = req.body;
     if (!message) return res.status(400).json({ error: 'message required' });
 
-    let context = '';
+    // history: array of { role: 'user'|'assistant', content: string } from previous turns
+    const messages = Array.isArray(history) ? [...history] : [];
+
+    let userContent = message;
+    let usedSources = [];
+
     if (useSearch) {
       try {
         const results = await tavilySearch(message);
-        context = results
+        usedSources = results.map(r => ({ title: r.title, url: r.url }));
+        const context = results
           .map((r, i) => `[${i + 1}] ${r.title}: ${r.content}`)
           .join('\n');
+        userContent = `Use the following web search results to help answer. Cite sources as [1], [2] etc where relevant.\n\n${context}\n\nQuestion: ${message}`;
       } catch (e) {
-        context = '';
+        // search failed silently, fall back to plain message
       }
     }
 
-    const prompt = context
-      ? `Use the following web search results to help answer. Cite sources as [1], [2] etc where relevant.\n\n${context}\n\nQuestion: ${message}`
-      : message;
+    messages.push({ role: 'user', content: userContent });
 
-    const ollamaRes = await axios.post(`${OLLAMA_BASE_URL}/api/generate`, {
+    const ollamaRes = await axios.post(`${OLLAMA_BASE_URL}/api/chat`, {
       model: TEXT_MODEL,
-      prompt,
+      messages,
       stream: false
     });
 
-    res.json({ reply: ollamaRes.data.response, sources: context ? true : false });
+    const reply = ollamaRes.data.message?.content || '';
+    res.json({ reply, sources: usedSources });
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ error: 'Text generation failed', detail: err.message });
