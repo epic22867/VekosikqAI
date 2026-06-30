@@ -1,0 +1,15 @@
+{
+  "name": "vekosiq-ai",
+  "version": "1.0.0",
+  "description": "Vekosiq AI - minimal chat site using Ollama (Qwen3:8b text, Qwen2.5VL:3b vision) over ngrok + Tavily web search",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "axios": "^1.7.7",
+    "multer": "^1.4.5-lts.1",
+    "dotenv": "^16.4.5"
+  }
+}
